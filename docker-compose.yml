@@ -1,0 +1,14 @@
+services:
+  research-agent:
+    build: .
+    ports:
+      - "8001:8000"   # 8001 to avoid clashing with ai-document-analyst on 8000
+    environment:
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - RETRIEVAL_MODE=${RETRIEVAL_MODE:-stub}
+      # When RETRIEVAL_MODE=rag, point this at your ai-document-analyst service.
+      - RAG_BASE_URL=${RAG_BASE_URL:-http://host.docker.internal:8000}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
