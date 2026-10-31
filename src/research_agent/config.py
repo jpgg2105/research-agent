@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     # Any OpenAI-compatible endpoint: e.g. Gemini's
     # https://generativelanguage.googleapis.com/v1beta/openai/ . None = api.openai.com.
     openai_base_url: str | None = None
+    openai_reasoning_effort: str | None = None   # low | medium | high (reasoning models, e.g. Gemini 3)
+    gemini_api_key: str | None = None            # used automatically when openai_base_url is Gemini's
     anthropic_model: str = "claude-sonnet-4-20250514"  # set to a model you have access to
 
     # --- Retrieval tool ---
@@ -31,6 +33,7 @@ class Settings(BaseSettings):
     max_sub_questions: int = 5
     request_timeout_s: float = 60.0
     llm_max_retries: int = 6      # SDK-level retries with backoff on 429/5xx
+    llm_rpm: float = 0            # client-side cap on requests per minute (0 = none); for free tiers
 
 
 def get_settings() -> Settings:

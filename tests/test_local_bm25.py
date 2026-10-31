@@ -32,3 +32,19 @@ def test_clients_record_usage():
     llm = FakeLLMClient()
     asyncio.run(llm.complete(system="You are the Planner", user="hello there"))
     assert llm.usage.calls == 1 and llm.usage.input_tokens > 0
+
+
+def test_rate_limiter_spaces_calls():
+    import time
+
+    from research_agent.llm.ratelimit import RateLimiter
+
+    lim = RateLimiter(rpm=600)   # one call per 0.1 s
+
+    async def three():
+        t0 = time.monotonic()
+        for _ in range(3):
+            await lim.wait()
+        return time.monotonic() - t0
+
+    assert asyncio.run(three()) >= 0.18
