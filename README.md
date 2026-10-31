@@ -2,6 +2,14 @@
 
 > A multi-agent research system that **plans, retrieves, critiques, and synthesizes** a cited report from a single question. It is designed to compose with the [ai-document-analyst](https://github.com/jpgg2105/ai-document-analyst) RAG service — the agent uses that RAG API as one of its retrieval tools.
 
+## Result
+
+On 100 HotpotQA multi-hop questions (same model and same BM25 retriever for both), this agent
+answered **86%** correctly against **74%** for a single retrieve-and-answer call: +12 points,
+95% CI [+4, +20], at about 6× the LLM calls. Measured with
+[agent-benchmark](https://github.com/jpgg2105/agent-benchmark) — see its
+[RESULTS.md](https://github.com/jpgg2105/agent-benchmark/blob/main/RESULTS.md).
+
 ## Why this exists
 
 A single RAG call answers one question against one retrieval. Real research questions need more: decomposition into parts, multiple retrievals, a check for what's missing, and synthesis into a coherent answer. This project adds that orchestration layer — a small team of role-specialised agents that loop until the question is actually covered, then write the report.
@@ -116,7 +124,8 @@ The researcher will now answer each sub-question against documents you've ingest
 
 ## Lessons learned
 
-- A planning step plus a critic loop catches the *confidently incomplete* answers that a single RAG call quietly misses — the Critic's follow-up questions are where most of the quality comes from.
+- Measured, not assumed: on 100 HotpotQA multi-hop questions the agent answered 86% correctly against 74% for a single retrieve-and-answer call (paired difference +12 points, 95% CI [+4, +20]), at about 6× the LLM calls. Most of the gain is on questions where a single search found only one of the two facts needed. The planner's decomposition produced 9 of the 15 wins; the critic's second round produced the other 6, on the hardest questions. Full write-up: [agent-benchmark/RESULTS.md](https://github.com/jpgg2105/agent-benchmark/blob/main/RESULTS.md).
+- The planner writes every sub-question before any search, so later ones can't name what earlier ones found ("this prison"). Letting each sub-question see earlier findings is the next change.
 - Taking citations from the tool rather than the model eliminated fabricated sources entirely, with no prompt-engineering required.
 - Schema-instructed JSON with a one-shot repair retry proved more portable across providers than native structured-output APIs, at the cost of a little prompt overhead.
 - Capping iterations is not optional: without the cap, a strict critic and a weak retriever can loop indefinitely.
