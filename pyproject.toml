@@ -3,7 +3,7 @@ name = "research-agent"
 version = "0.1.0"
 description = "A multi-agent research system that plans, retrieves, critiques, and synthesizes cited reports. Composes with the ai-document-analyst RAG service as a retrieval tool."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 dependencies = [
     "pydantic>=2.6",
