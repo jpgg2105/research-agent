@@ -36,7 +36,7 @@ question
 cited report  +  full execution trace
 ```
 
-Set `RETRIEVAL_MODE=rag` and `RAG_BASE_URL` to point the researcher at your running RAG service. Out of the box it runs in `stub` mode, so the whole pipeline works with no external services.
+Set `RETRIEVAL_MODE=rag` and `RAG_BASE_URL` to point the researcher at your running RAG service, or `RETRIEVAL_MODE=local` with `LOCAL_CORPUS_PATH` to search a JSONL file in-process with BM25 (used by the benchmark). Out of the box it runs in `stub` mode, so the whole pipeline works with no external services.
 
 ## The agents
 

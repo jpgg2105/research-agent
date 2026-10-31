@@ -12,7 +12,13 @@ def build_llm_client(settings: Settings) -> LLMClient:
             raise ValueError("OPENAI_API_KEY is required when LLM_PROVIDER=openai")
         from .openai_client import OpenAIClient
 
-        return OpenAIClient(settings.openai_api_key, settings.openai_model, settings.request_timeout_s)
+        return OpenAIClient(
+            settings.openai_api_key,
+            settings.openai_model,
+            settings.request_timeout_s,
+            base_url=settings.openai_base_url,
+            max_retries=settings.llm_max_retries,
+        )
 
     if provider == "anthropic":
         if not settings.anthropic_api_key:
@@ -20,7 +26,10 @@ def build_llm_client(settings: Settings) -> LLMClient:
         from .anthropic_client import AnthropicClient
 
         return AnthropicClient(
-            settings.anthropic_api_key, settings.anthropic_model, settings.request_timeout_s
+            settings.anthropic_api_key,
+            settings.anthropic_model,
+            settings.request_timeout_s,
+            max_retries=settings.llm_max_retries,
         )
 
     if provider == "fake":

@@ -14,10 +14,14 @@ class Settings(BaseSettings):
     openai_api_key: str | None = None
     anthropic_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"
+    # Any OpenAI-compatible endpoint: e.g. Gemini's
+    # https://generativelanguage.googleapis.com/v1beta/openai/ . None = api.openai.com.
+    openai_base_url: str | None = None
     anthropic_model: str = "claude-sonnet-4-20250514"  # set to a model you have access to
 
     # --- Retrieval tool ---
-    retrieval_mode: str = Field(default="stub")  # rag | web | stub
+    retrieval_mode: str = Field(default="stub")  # rag | web | local | stub
+    local_corpus_path: str | None = None           # JSONL {id, title, text} for retrieval_mode=local
     rag_base_url: str = "http://localhost:8000"   # the ai-document-analyst service
     rag_query_path: str = "/api/v1/query"
     top_k: int = 5
@@ -26,6 +30,7 @@ class Settings(BaseSettings):
     max_iterations: int = 2       # hard cap on research<->critique rounds
     max_sub_questions: int = 5
     request_timeout_s: float = 60.0
+    llm_max_retries: int = 6      # SDK-level retries with backoff on 429/5xx
 
 
 def get_settings() -> Settings:

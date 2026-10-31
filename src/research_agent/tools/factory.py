@@ -17,11 +17,18 @@ def build_retrieval_tool(settings: Settings) -> RetrievalTool:
 
         return WebSearchTool()
 
+    if mode == "local":
+        if not settings.local_corpus_path:
+            raise ValueError("LOCAL_CORPUS_PATH is required when RETRIEVAL_MODE=local")
+        from .local_bm25 import LocalBM25Tool
+
+        return LocalBM25Tool(settings.local_corpus_path)
+
     if mode == "stub":
         from .stub import StubRetrievalTool
 
         return StubRetrievalTool()
 
     raise ValueError(
-        f"Unknown RETRIEVAL_MODE: {settings.retrieval_mode!r} (expected 'rag', 'web', or 'stub')"
+        f"Unknown RETRIEVAL_MODE: {settings.retrieval_mode!r} (expected 'rag', 'web', 'local', or 'stub')"
     )

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 
+from .usage import Usage
+
 
 class FakeLLMClient:
     """Deterministic, offline LLM stand-in for demos, smoke tests, and CI.
@@ -13,7 +15,11 @@ class FakeLLMClient:
 
     model = "fake"
 
+    def __init__(self) -> None:
+        self.usage = Usage()
+
     async def complete(self, *, system: str, user: str, temperature: float = 0.2) -> str:
+        self.usage.add(len(system.split()) + len(user.split()), 0)
         if "Planner" in system:
             return json.dumps(
                 {

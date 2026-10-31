@@ -1,14 +1,20 @@
 from __future__ import annotations
 
+from .usage import Usage
+
 
 class AnthropicClient:
-    """Anthropic Messages API backed LLMClient. SDK imported lazily."""
+    """Anthropic Messages API backed LLMClient. SDK imported lazily.
 
-    def __init__(self, api_key: str, model: str, timeout: float = 60.0) -> None:
+    Token usage is recorded on ``self.usage``.
+    """
+
+    def __init__(self, api_key: str, model: str, timeout: float = 60.0, max_retries: int = 6) -> None:
         from anthropic import AsyncAnthropic  # lazy import
 
-        self._client = AsyncAnthropic(api_key=api_key, timeout=timeout)
+        self._client = AsyncAnthropic(api_key=api_key, timeout=timeout, max_retries=max_retries)
         self._model = model
+        self.usage = Usage()
 
     @property
     def model(self) -> str:
@@ -22,5 +28,7 @@ class AnthropicClient:
             system=system,
             messages=[{"role": "user", "content": user}],
         )
+        u = getattr(resp, "usage", None)
+        self.usage.add(getattr(u, "input_tokens", 0), getattr(u, "output_tokens", 0))
         parts = [b.text for b in resp.content if getattr(b, "type", None) == "text"]
         return "".join(parts)
