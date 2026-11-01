@@ -1,6 +1,6 @@
 import asyncio
 
-from conftest import FakeLLM
+from tests.fakes import FakeLLM
 
 from research_agent.agents import Critic, Planner, Researcher, Synthesizer
 from research_agent.orchestrator import ResearchOrchestrator

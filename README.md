@@ -116,7 +116,7 @@ The researcher will now answer each sub-question against documents you've ingest
 
 ## Design decisions
 
-- **Citations come from the retrieval tool, not the model.** The Researcher's LLM output is only an answer + a confidence; the sources attached to every `Finding` are exactly what the tool returned. This makes fabricated citations structurally impossible.
+- **Citations come from the retrieval tool, not the model.** The Researcher's LLM output is only an answer + a confidence; the sources attached to every `Finding` are exactly what the tool returned. So the model can't attach a source that retrieval didn't return. It can still misread or overstate what a real source says; that is the Critic's job, and the benchmark's judge checks the answers.
 - **Structured outputs via schema-instructed prompting + validation + repair.** Each agent gets the target JSON Schema and its output is validated against a Pydantic model; on a parse failure the error is fed back for one repair attempt. This keeps a single code path across providers. In production you might swap in each provider's native structured-output mode.
 - **The reflection loop is bounded.** A strict Critic could otherwise loop forever; `MAX_ITERATIONS` guarantees termination, and the loop also stops early the moment the Critic is satisfied.
 - **Sub-questions are researched concurrently** with `asyncio.gather`, so wall-clock time scales with the slowest retrieval, not the sum.
@@ -124,10 +124,10 @@ The researcher will now answer each sub-question against documents you've ingest
 
 ## Lessons learned
 
-- Measured, not assumed: on 100 HotpotQA multi-hop questions the agent answered 86% correctly against 74% for a single retrieve-and-answer call (paired difference +12 points, 95% CI [+4, +20]), at about 6× the LLM calls. Most of the gain is on questions where a single search found only one of the two facts needed. The planner's decomposition produced 9 of the 15 wins; the critic's second round produced the other 6, on the hardest questions. Full write-up: [agent-benchmark/RESULTS.md](https://github.com/jpgg2105/agent-benchmark/blob/main/RESULTS.md).
+- Measured, not assumed: on 100 HotpotQA multi-hop questions the agent answered 86% correctly against 74% for a single retrieve-and-answer call (paired difference +12 points, 95% CI [+4, +20]), at about 6× the LLM calls. Most of the gain is on questions where a single search found only one of the two facts needed. The planner's decomposition accounts for 9 of the 15 wins; the other 6 came on questions where the critic asked for a second round, though without an agent-without-critic run that isn't a measured effect of the critic. Full write-up: [agent-benchmark/RESULTS.md](https://github.com/jpgg2105/agent-benchmark/blob/main/RESULTS.md).
 - The planner writes every sub-question before any search, so later ones can't name what earlier ones found ("this prison"). Letting each sub-question see earlier findings is the next change.
-- Taking citations from the tool rather than the model eliminated fabricated sources entirely, with no prompt-engineering required.
-- Schema-instructed JSON with a one-shot repair retry proved more portable across providers than native structured-output APIs, at the cost of a little prompt overhead.
+- Taking citations from the tool rather than the model means a cited source always exists; whether the answer reads it correctly is a separate question, and the one the benchmark measures.
+- Schema-instructed JSON with a one-shot repair retry keeps one code path across providers. I haven't compared it with each provider's native structured-output mode.
 - Capping iterations is not optional: without the cap, a strict critic and a weak retriever can loop indefinitely.
 
 ## Testing
@@ -137,7 +137,7 @@ pip install -e ".[dev]"
 pytest -q
 ```
 
-The suite runs fully offline using a role-aware fake LLM and the stub retrieval tool — no API keys and no network. It covers the happy path, the iteration-cap path, the structured-output repair retry, and model validation.
+The suite runs fully offline using a role-aware fake LLM and the stub retrieval tool — no API keys and no network. It covers the happy path, the iteration-cap path, the structured-output repair retry, model validation, and the request and response schema of the RAG tool against ai-document-analyst's `/query` endpoint.
 
 ## Project layout
 

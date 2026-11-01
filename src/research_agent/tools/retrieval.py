@@ -6,10 +6,10 @@ from ..models import Source
 class RAGRetrievalTool:
     """Queries the ai-document-analyst RAG service over HTTP.
 
-    This is the composition seam between the two projects: the multi-agent
-    researcher treats your existing RAG API as one of its tools, so the systems
-    stack instead of duplicating retrieval. The response parsing is defensive
-    about field names; adjust to match your service's exact schema.
+    The multi-agent researcher uses the RAG service as one of its tools, so the two
+    projects stack instead of duplicating retrieval. Request and response follow the
+    service's ``QueryRequest`` / ``QueryResponse`` schemas (``src/api/schemas.py`` in
+    ai-document-analyst); ``tests/test_rag_tool.py`` pins that contract.
     """
 
     name = "rag_retrieval"
@@ -24,17 +24,20 @@ class RAGRetrievalTool:
 
         url = f"{self._base_url}{self._query_path}"
         async with httpx.AsyncClient(timeout=self._timeout) as client:
-            resp = await client.post(url, json={"question": query, "top_k": top_k})
+            # QueryRequest: {"query": str, "document_id": str | None, "stream": bool}
+            resp = await client.post(url, json={"query": query, "stream": False})
             resp.raise_for_status()
             data = resp.json()
 
+        # QueryResponse.sources: [{"chunk_id", "text", "filename", "page_number", "section", "score", ...}]
         sources: list[Source] = []
-        for item in data.get("sources", []):
+        for item in data.get("sources", [])[:top_k]:
+            page = item.get("page_number")
             sources.append(
                 Source(
-                    title=item.get("title") or item.get("document"),
-                    locator=str(item.get("id") or item.get("locator") or "") or None,
-                    snippet=item.get("snippet") or item.get("text"),
+                    title=item.get("filename") or None,
+                    locator=f"{item.get('chunk_id', '')}" + (f" (p. {page})" if page else "") or None,
+                    snippet=item.get("text"),
                 )
             )
         # If the service returns a synthesized answer but no source list, keep it.
